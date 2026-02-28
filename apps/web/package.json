@@ -1,0 +1,36 @@
+{
+  "name": "@uynis/web",
+  "private": true,
+  "scripts": {
+    "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true});\"",
+    "clean:all": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true});\"",
+    "check:utf8": "node ./scripts/check-utf8.mjs",
+    "predev": "node ./scripts/predev-check.mjs && pnpm run check:utf8",
+    "prebuild": "pnpm run check:utf8",
+    "prelint": "pnpm run check:utf8",
+    "dev": "next dev --port 3000",
+    "dev:clean": "pnpm clean && pnpm dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "monaco-editor": "^0.55.1",
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-easy-crop": "^5.5.6",
+    "react-markdown": "^10.1.0",
+    "rehype-raw": "^7.0.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "8.57.0",
+    "eslint-config-next": "14.2.5",
+    "typescript": "5.5.4"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "uynis",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20 <26"
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "format": "prettier -w .",
+    "cli": "node packages/cli/bin/uynis.mjs"
+  },
+  "devDependencies": {
+    "prettier": "3.2.5",
+    "turbo": "2.0.6",
+    "typescript": "5.5.4"
+  }
+}

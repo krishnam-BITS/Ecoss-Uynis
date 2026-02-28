@@ -1,0 +1,1324 @@
+openapi: 3.0.3
+info:
+  title: Uynis API
+  version: 0.1.0
+servers:
+  - url: http://localhost:4000
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+  /auth/signup:
+    post:
+      summary: Create an account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+  /auth/login:
+    post:
+      summary: Log in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+  /me:
+    get:
+      summary: Current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+    patch:
+      summary: Update current user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+  /workspaces:
+    get:
+      summary: List orgs
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orgs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Org'
+    post:
+      summary: Create org
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  org:
+                    $ref: '#/components/schemas/Org'
+  /workspaces/{workspaceId}:
+    get:
+      summary: Get org
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  org:
+                    $ref: '#/components/schemas/Org'
+  /workspaces/{workspaceId}/settings:
+    get:
+      summary: Get org settings
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  org:
+                    $ref: '#/components/schemas/workspacesettings'
+    patch:
+      summary: Update org settings
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/workspacesettingsUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  org:
+                    $ref: '#/components/schemas/workspacesettings'
+  /workspaces/{workspaceId}/members:
+    get:
+      summary: List org members
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrgMember'
+    post:
+      summary: Add org member
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgMemberInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  member:
+                    $ref: '#/components/schemas/OrgMember'
+  /workspaces/{workspaceId}/members/{memberId}:
+    patch:
+      summary: Update org member
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: memberId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgMemberUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  member:
+                    $ref: '#/components/schemas/OrgMember'
+    delete:
+      summary: Remove org member
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: memberId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /workspaces/{workspaceId}/teams:
+    get:
+      summary: List teams
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  teams:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Team'
+    post:
+      summary: Create team
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  team:
+                    $ref: '#/components/schemas/Team'
+  /workspaces/{workspaceId}/teams/{teamId}/members:
+    get:
+      summary: List team members
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: teamId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TeamMember'
+    post:
+      summary: Add team member
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: teamId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamMemberInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  member:
+                    $ref: '#/components/schemas/TeamMember'
+  /workspaces/{workspaceId}/teams/{teamId}/members/{userId}:
+    delete:
+      summary: Remove team member
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: teamId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /workspaces/{workspaceId}/teams/{teamId}/repos/{repoId}:
+    put:
+      summary: Set team repo permission
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: teamId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: [READ, WRITE, ADMIN]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  permission:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      role:
+                        type: string
+                        enum: [READ, WRITE, ADMIN]
+    delete:
+      summary: Remove team repo permission
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: teamId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /workspaces/{workspaceId}/repos:
+    get:
+      summary: List repos for org
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  repos:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Repo'
+    post:
+      summary: Create repo
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RepoInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  repo:
+                    $ref: '#/components/schemas/Repo'
+  /workspaces/{workspaceId}/repos/{repoId}:
+    get:
+      summary: Get repo
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  repo:
+                    $ref: '#/components/schemas/RepoDetail'
+  /workspaces/{workspaceId}/repos/{repoId}/collaborators:
+    get:
+      summary: List repo collaborators
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  collaborators:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RepoCollaborator'
+    post:
+      summary: Add or update repo collaborator
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [READ, WRITE, ADMIN]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  collaborator:
+                    $ref: '#/components/schemas/RepoCollaborator'
+  /workspaces/{workspaceId}/repos/{repoId}/collaborators/{userId}:
+    delete:
+      summary: Remove repo collaborator
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /workspaces/{workspaceId}/repos/{repoId}/teams:
+    get:
+      summary: List repo team access
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  teams:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TeamRepoPermission'
+  /workspaces/{workspaceId}/repos/{repoId}/branches:
+    get:
+      summary: List branches
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  branches:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Branch'
+  /workspaces/{workspaceId}/repos/{repoId}/commits:
+    get:
+      summary: List commits
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: branch
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  branch:
+                    type: string
+                  limit:
+                    type: integer
+                  commits:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Commit'
+  /workspaces/{workspaceId}/repos/{repoId}/issues:
+    get:
+      summary: List issues
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [OPEN, CLOSED]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  issues:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Issue'
+    post:
+      summary: Create issue
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssueInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  issue:
+                    $ref: '#/components/schemas/Issue'
+  /workspaces/{workspaceId}/repos/{repoId}/issues/{issueId}:
+    patch:
+      summary: Update issue
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: issueId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssueUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  issue:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      status:
+                        type: string
+                        enum: [OPEN, CLOSED]
+  /workspaces/{workspaceId}/repos/{repoId}/pulls:
+    get:
+      summary: List pull requests
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [OPEN, CLOSED, MERGED]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pulls:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PullRequest'
+    post:
+      summary: Create pull request
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PullRequestInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pull:
+                    $ref: '#/components/schemas/PullRequest'
+  /workspaces/{workspaceId}/repos/{repoId}/pulls/{pullId}:
+    patch:
+      summary: Update pull request
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: workspaceId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: repoId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: pullId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PullRequestUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pull:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      status:
+                        type: string
+                        enum: [OPEN, CLOSED, MERGED]
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuthInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        name:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+          nullable: true
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+    UserResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+          nullable: true
+    OrgInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+    Org:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        isPersonal:
+          type: boolean
+        baseRepoPermission:
+          type: string
+          enum: [NONE, READ, WRITE]
+        publicReadRequiresAuth:
+          type: boolean
+        allowOutsideCollaborators:
+          type: boolean
+        adminRepoAccessMode:
+          type: string
+          enum: [ALL_REPOS_ADMIN, BASE_PERMISSION_ONLY]
+    OrgSettings:
+      type: object
+      properties:
+        id:
+          type: string
+        baseRepoPermission:
+          type: string
+          enum: [NONE, READ, WRITE]
+        publicReadRequiresAuth:
+          type: boolean
+        allowOutsideCollaborators:
+          type: boolean
+        adminRepoAccessMode:
+          type: string
+          enum: [ALL_REPOS_ADMIN, BASE_PERMISSION_ONLY]
+    OrgSettingsUpdate:
+      type: object
+      properties:
+        baseRepoPermission:
+          type: string
+          enum: [NONE, READ, WRITE]
+        publicReadRequiresAuth:
+          type: boolean
+        allowOutsideCollaborators:
+          type: boolean
+        adminRepoAccessMode:
+          type: string
+          enum: [ALL_REPOS_ADMIN, BASE_PERMISSION_ONLY]
+    OrgMember:
+      type: object
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [OWNER, ADMIN, MEMBER]
+        createdAt:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserSummary'
+    OrgMemberInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [OWNER, ADMIN, MEMBER]
+    OrgMemberUpdate:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [OWNER, ADMIN, MEMBER]
+    TeamInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+    Team:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+    TeamMember:
+      type: object
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [MEMBER, MAINTAINER]
+        createdAt:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserSummary'
+    TeamMemberInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [MEMBER, MAINTAINER]
+    TeamRepoPermission:
+      type: object
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [READ, WRITE, ADMIN]
+        team:
+          $ref: '#/components/schemas/Team'
+    RepoInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        visibility:
+          type: string
+          enum: [PUBLIC, PRIVATE, INTERNAL]
+    Repo:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        visibility:
+          type: string
+          enum: [PUBLIC, PRIVATE, INTERNAL]
+        defaultBranch:
+          type: string
+    RepoDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        visibility:
+          type: string
+          enum: [PUBLIC, PRIVATE, INTERNAL]
+        defaultBranch:
+          type: string
+        viewerRole:
+          type: string
+          enum: [READ, WRITE, ADMIN]
+          nullable: true
+        org:
+          $ref: '#/components/schemas/Org'
+    RepoCollaborator:
+      type: object
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [READ, WRITE, ADMIN]
+        createdAt:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserSummary'
+    IssueInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+          nullable: true
+    IssueUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [OPEN, CLOSED]
+    Issue:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum: [OPEN, CLOSED]
+        createdAt:
+          type: string
+        author:
+          $ref: '#/components/schemas/UserSummary'
+    PullRequestInput:
+      type: object
+      required: [title, sourceBranch]
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+          nullable: true
+        sourceBranch:
+          type: string
+        targetBranch:
+          type: string
+    PullRequestUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [OPEN, CLOSED, MERGED]
+    PullRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum: [OPEN, CLOSED, MERGED]
+        sourceBranch:
+          type: string
+        targetBranch:
+          type: string
+        createdAt:
+          type: string
+        author:
+          $ref: '#/components/schemas/UserSummary'
+    Branch:
+      type: object
+      properties:
+        name:
+          type: string
+        sha:
+          type: string
+    Commit:
+      type: object
+      properties:
+        sha:
+          type: string
+        author:
+          type: string
+        date:
+          type: string
+        message:
+          type: string
+

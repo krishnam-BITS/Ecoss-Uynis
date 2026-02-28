@@ -1,0 +1,17 @@
+version: '3.9'
+
+services:
+  postgres:
+    ports: []
+  redis:
+    ports: []
+  minio:
+    ports: []
+  opensearch:
+    ports: []
+  git-storage:
+    ports: []
+  api:
+    ports: []
+  web:
+    ports: []

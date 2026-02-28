@@ -1,0 +1,215 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&family=IBM+Plex+Mono:wght@400;600&family=Manrope:wght@400;500;600;700&display=swap');
+@import './styles/public.css';
+@import './styles/auth.css';
+@import './styles/portal.css';
+
+:root {
+  color-scheme: dark;
+  font-family: 'Space Grotesk', sans-serif;
+  --bg-primary: #0b1220;
+  --bg-surface: #111a2e;
+  --bg-elevated: #1a2740;
+  --border: #2a3a58;
+  --text-primary: #e5ecf7;
+  --text-muted: #9fb0cc;
+  --accent: #60a5fa;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --transition-fast: 120ms;
+  --transition-base: 180ms;
+  --transition-slow: 240ms;
+  --app-bg: var(--bg-primary);
+  --surface: var(--bg-surface);
+  --surface-strong: var(--bg-elevated);
+  --surface-muted: color-mix(in srgb, var(--bg-primary) 90%, #020617 10%);
+  --text: var(--text-primary);
+  --muted: var(--text-muted);
+  --link: var(--accent);
+  --link-strong: color-mix(in srgb, var(--accent) 78%, #ffffff 22%);
+  --border-strong: color-mix(in srgb, var(--border) 75%, #9fb0cc 25%);
+  --shadow: 0 18px 40px rgba(1, 4, 9, 0.58);
+  --ui-accent: var(--accent);
+  --ui-accent-soft: color-mix(in srgb, var(--accent) 24%, transparent);
+  --accent-strong: color-mix(in srgb, var(--success) 82%, #ffffff 18%);
+  --accent-soft: color-mix(in srgb, var(--success) 20%, transparent);
+  --canvas-bg: var(--bg-primary);
+  --canvas-surface: var(--bg-surface);
+  --canvas-surface-2: var(--bg-elevated);
+  --canvas-border: color-mix(in srgb, var(--border) 75%, transparent);
+  --canvas-text: var(--text-primary);
+  --canvas-muted: var(--text-muted);
+  --canvas-accent: var(--accent);
+  --canvas-accent-strong: color-mix(in srgb, var(--accent) 75%, #ffffff 25%);
+  --canvas-radius: 0.625rem;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+  --bg-primary: #f3f6fb;
+  --bg-surface: #ffffff;
+  --bg-elevated: #eef3fb;
+  --border: #d7e0ee;
+  --text-primary: #0f172a;
+  --text-muted: #475569;
+  --accent: #60A5FA;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --app-bg: var(--bg-primary);
+  --surface: var(--bg-surface);
+  --surface-strong: var(--bg-elevated);
+  --surface-muted: color-mix(in srgb, var(--bg-primary) 72%, #ffffff 28%);
+  --text: var(--text-primary);
+  --muted: var(--text-muted);
+  --link: var(--accent);
+  --link-strong: color-mix(in srgb, var(--accent) 82%, #1e3a8a 18%);
+  --border-strong: color-mix(in srgb, var(--border) 70%, #94a3b8 30%);
+  --shadow: 0 18px 36px rgba(15, 23, 42, 0.1);
+  --ui-accent: var(--accent);
+  --ui-accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+  --accent-strong: color-mix(in srgb, var(--success) 82%, #052e16 18%);
+  --accent-soft: color-mix(in srgb, var(--success) 12%, transparent);
+  --canvas-bg: var(--bg-primary);
+  --canvas-surface: var(--bg-surface);
+  --canvas-surface-2: var(--bg-elevated);
+  --canvas-border: color-mix(in srgb, var(--border) 82%, transparent);
+  --canvas-text: var(--text-primary);
+  --canvas-muted: var(--text-muted);
+  --canvas-accent: var(--accent);
+  --canvas-accent-strong: color-mix(in srgb, var(--accent) 82%, #1e3a8a 18%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--app-bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+html[data-app-ready='false'] body > * {
+  visibility: hidden;
+}
+
+html[data-app-ready='false'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  background: var(--app-bg);
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.01em;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.app-boot-screen {
+  width: 100%;
+  min-height: 100dvh;
+  background: var(--app-bg);
+}
+
+.status-shell {
+  width: 100%;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--app-bg);
+}
+
+.status-card {
+  width: min(560px, 100%);
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  box-shadow: var(--shadow);
+  padding: 28px 26px;
+  display: grid;
+  gap: 12px;
+}
+
+.status-code {
+  margin: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--link-strong);
+}
+
+.status-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  line-height: 1.08;
+}
+
+.status-copy {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.status-actions {
+  margin-top: 4px;
+  display: inline-flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.status-btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.status-btn-primary {
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+  color: #ffffff;
+}
+
+.status-btn-primary:hover {
+  filter: brightness(0.95);
+}
+
+.status-btn-secondary {
+  background: transparent;
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.status-btn-secondary:hover {
+  background: var(--ui-accent-soft);
+  border-color: var(--ui-accent);
+}

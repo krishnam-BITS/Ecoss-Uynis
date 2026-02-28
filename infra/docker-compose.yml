@@ -1,0 +1,249 @@
+name: uynis-infra
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: uynis-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: uynis
+    ports:
+      - "${HOST_BIND_IP:-127.0.0.1}:${POSTGRES_HOST_PORT:-5433}:5432"
+    volumes:
+      - uynis_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d uynis"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: uynis-redis
+    ports:
+      - "${HOST_BIND_IP:-127.0.0.1}:${REDIS_HOST_PORT:-6379}:6379"
+    volumes:
+      - uynis_redis:/data
+
+  minio:
+    image: minio/minio:RELEASE.2025-01-20T14-49-07Z
+    container_name: uynis-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-uynisminio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-uynisminiosecret}
+    ports:
+      - "${HOST_BIND_IP:-127.0.0.1}:${MINIO_API_HOST_PORT:-9000}:9000"
+      - "${HOST_BIND_IP:-127.0.0.1}:${MINIO_CONSOLE_HOST_PORT:-9011}:9001"
+    volumes:
+      - uynis_minio:/data
+
+  opensearch:
+    image: opensearchproject/opensearch:2.17.1
+    container_name: uynis-opensearch
+    environment:
+      discovery.type: single-node
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+      plugins.security.disabled: "true"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-UynisSearch1!}
+    ports:
+      - "${HOST_BIND_IP:-127.0.0.1}:${OPENSEARCH_HTTP_HOST_PORT:-9200}:9200"
+      - "${HOST_BIND_IP:-127.0.0.1}:${OPENSEARCH_METRICS_HOST_PORT:-9600}:9600"
+    volumes:
+      - uynis_opensearch:/usr/share/opensearch/data
+
+  git-storage:
+    image: node:20-bookworm
+    container_name: uynis-git-storage
+    working_dir: /workspace
+    command: sh -lc "corepack enable && flock /workspace/.pnpm-install.lock -c 'pnpm install --prefer-offline && pnpm -C packages/db generate' && pnpm -C apps/git dev"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      INTERNAL_RPC_TOKEN: ${INTERNAL_RPC_TOKEN:-dev-change-this-long-random}
+      GIT_PORT: 4001
+      GIT_HOST: 0.0.0.0
+      REPO_STORAGE_PATH: /var/lib/uynis/repos
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://postgres:postgres@postgres:5432/uynis}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:4000}
+    ports:
+      - "${HOST_BIND_IP:-127.0.0.1}:${GIT_HOST_PORT:-4001}:4001"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:4001/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - ..:/workspace
+      - uynis_node_modules:/workspace/node_modules
+      - uynis_api_node_modules:/workspace/apps/api/node_modules
+      - uynis_git_node_modules:/workspace/apps/git/node_modules
+      - uynis_web_node_modules:/workspace/apps/web/node_modules
+      - uynis_db_node_modules:/workspace/packages/db/node_modules
+      - uynis_git_repos:/var/lib/uynis/repos
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    image: node:20-bookworm
+    container_name: uynis-api
+    working_dir: /workspace
+    command: sh -lc "corepack enable && pnpm -C apps/api dev"
+    environment:
+      API_PORT: 4000
+      API_HOST: 0.0.0.0
+      API_PUBLIC_URL: ${API_PUBLIC_URL:-http://localhost:4000}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      OTP_HMAC_SECRET: ${OTP_HMAC_SECRET:-}
+      OTP_TTL_MS: ${OTP_TTL_MS:-600000}
+      OTP_MAX_ATTEMPTS: ${OTP_MAX_ATTEMPTS:-5}
+      OTP_SENDER_EMAIL: ${OTP_SENDER_EMAIL:-no-reply@uynis.local}
+      OTP_SENDER_PHONE: ${OTP_SENDER_PHONE:-Uynis}
+      INTERNAL_RPC_TOKEN: ${INTERNAL_RPC_TOKEN:-dev-change-this-long-random}
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://postgres:postgres@postgres:5432/uynis}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      GIT_STORAGE_RPC_URL: ${GIT_STORAGE_RPC_URL:-http://git-storage:4001}
+      REPO_STORAGE_PATH: /var/lib/uynis/repos
+      REQUIRE_REPO_STORAGE_PATH: "true"
+      REPO_STORAGE_NAMESPACE: ${REPO_STORAGE_NAMESPACE:-repos}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_BUCKET_UPLOADS: ${S3_BUCKET_UPLOADS:-uynis-uploads}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-uynisminio}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-uynisminiosecret}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      UPLOADS_LEGACY_FALLBACK: "false"
+      OPENSEARCH_URL: ${OPENSEARCH_URL:-http://opensearch:9200}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      ADMIN_USER_IDS: ${ADMIN_USER_IDS:-}
+      ALLOW_DEV_ADMIN_FALLBACK: ${ALLOW_DEV_ADMIN_FALLBACK:-false}
+      MESSAGE_DELIVERY_PROVIDER: ${MESSAGE_DELIVERY_PROVIDER:-none}
+      MESSAGE_DELIVERY_WEBHOOK_URL: ${MESSAGE_DELIVERY_WEBHOOK_URL_DOCKER:-http://host.docker.internal:3011/api/messages}
+      MESSAGE_DELIVERY_WEBHOOK_BEARER: ${MESSAGE_DELIVERY_WEBHOOK_BEARER:-}
+      MESSAGE_DELIVERY_SHARED_KEY: ${MESSAGE_DELIVERY_SHARED_KEY:-}
+      MESSAGE_DELIVERY_SENDGRID_API_KEY: ${MESSAGE_DELIVERY_SENDGRID_API_KEY:-}
+      MESSAGE_DELIVERY_SENDGRID_FROM_EMAIL: ${MESSAGE_DELIVERY_SENDGRID_FROM_EMAIL:-}
+      MESSAGE_DELIVERY_TWILIO_ACCOUNT_SID: ${MESSAGE_DELIVERY_TWILIO_ACCOUNT_SID:-}
+      MESSAGE_DELIVERY_TWILIO_AUTH_TOKEN: ${MESSAGE_DELIVERY_TWILIO_AUTH_TOKEN:-}
+      MESSAGE_DELIVERY_TWILIO_FROM_PHONE: ${MESSAGE_DELIVERY_TWILIO_FROM_PHONE:-}
+      IMPORT_WORKER_ENABLED: "false"
+      CHOKIDAR_USEPOLLING: "1"
+      CHOKIDAR_INTERVAL: "250"
+    ports:
+      - "${HOST_BIND_IP:-127.0.0.1}:${API_HOST_PORT:-4000}:4000"
+    volumes:
+      - ..:/workspace
+      - uynis_node_modules:/workspace/node_modules
+      - uynis_api_node_modules:/workspace/apps/api/node_modules
+      - uynis_git_node_modules:/workspace/apps/git/node_modules
+      - uynis_web_node_modules:/workspace/apps/web/node_modules
+      - uynis_db_node_modules:/workspace/packages/db/node_modules
+      - uynis_git_repos:/var/lib/uynis/repos
+      - uynis_api_uploads:/workspace/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+      opensearch:
+        condition: service_started
+      git-storage:
+        condition: service_healthy
+
+  worker:
+    image: node:20-bookworm
+    container_name: uynis-worker
+    working_dir: /workspace
+    command: sh -lc "corepack enable && pnpm -C apps/api worker"
+    environment:
+      API_PORT: 4002
+      API_HOST: 0.0.0.0
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://postgres:postgres@postgres:5432/uynis}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      GIT_STORAGE_RPC_URL: ${GIT_STORAGE_RPC_URL:-http://git-storage:4001}
+      REPO_STORAGE_PATH: /var/lib/uynis/repos
+      REQUIRE_REPO_STORAGE_PATH: "true"
+      REPO_STORAGE_NAMESPACE: ${REPO_STORAGE_NAMESPACE:-repos}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_BUCKET_UPLOADS: ${S3_BUCKET_UPLOADS:-uynis-uploads}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-uynisminio}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-uynisminiosecret}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      UPLOADS_LEGACY_FALLBACK: "false"
+      OPENSEARCH_URL: ${OPENSEARCH_URL:-http://opensearch:9200}
+      IMPORT_WORKER_ENABLED: "true"
+      CHOKIDAR_USEPOLLING: "1"
+      CHOKIDAR_INTERVAL: "250"
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f \"tsx src/worker.ts\" >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ..:/workspace
+      - uynis_node_modules:/workspace/node_modules
+      - uynis_api_node_modules:/workspace/apps/api/node_modules
+      - uynis_git_node_modules:/workspace/apps/git/node_modules
+      - uynis_web_node_modules:/workspace/apps/web/node_modules
+      - uynis_db_node_modules:/workspace/packages/db/node_modules
+      - uynis_git_repos:/var/lib/uynis/repos
+      - uynis_api_uploads:/workspace/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+      opensearch:
+        condition: service_started
+      git-storage:
+        condition: service_healthy
+
+  web:
+    image: node:20-bookworm
+    container_name: uynis-web
+    working_dir: /workspace
+    command: sh -lc "corepack enable && rm -rf /workspace/apps/web/.next/* && pnpm -C apps/web dev"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+      NEXT_PUBLIC_GIT_URL: ${NEXT_PUBLIC_GIT_URL:-http://localhost:4001}
+      CHOKIDAR_USEPOLLING: "1"
+      CHOKIDAR_INTERVAL: "250"
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "${HOST_BIND_IP:-127.0.0.1}:${WEB_HOST_PORT:-3000}:3000"
+    volumes:
+      - ..:/workspace
+      - uynis_node_modules:/workspace/node_modules
+      - uynis_api_node_modules:/workspace/apps/api/node_modules
+      - uynis_git_node_modules:/workspace/apps/git/node_modules
+      - uynis_web_node_modules:/workspace/apps/web/node_modules
+      - uynis_web_next:/workspace/apps/web/.next
+      - uynis_db_node_modules:/workspace/packages/db/node_modules
+    depends_on:
+      api:
+        condition: service_started
+      git-storage:
+        condition: service_healthy
+
+volumes:
+  uynis_postgres:
+  uynis_redis:
+  uynis_minio:
+  uynis_opensearch:
+  uynis_git_repos:
+  uynis_api_uploads:
+  uynis_node_modules:
+  uynis_api_node_modules:
+  uynis_git_node_modules:
+  uynis_web_node_modules:
+  uynis_web_next:
+  uynis_db_node_modules:

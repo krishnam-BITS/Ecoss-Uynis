@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Temp Delivery</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <div class="tabs" role="tablist" aria-label="Delivery channels">
+          <button class="tab is-active" data-channel="email" role="tab" aria-selected="true">Mail</button>
+          <button class="tab" data-channel="phone" role="tab" aria-selected="false">Phone</button>
+        </div>
+
+        <div class="panel panel-mail is-active" data-panel="email">
+          <aside class="mail-list">
+            <div class="panel-title">Inbox</div>
+            <div class="message-list" id="mail-list"></div>
+          </aside>
+          <section class="mail-reader" id="mail-reader">
+            <div class="empty-state">No mail delivered yet.</div>
+          </section>
+        </div>
+
+        <div class="panel panel-phone" data-panel="phone">
+          <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="panel-title">Messages</div>
+              <div class="message-list phone-list" id="phone-list"></div>
+              <section class="phone-reader" id="phone-reader">
+                <div class="empty-state">No phone messages delivered yet.</div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+  </html>

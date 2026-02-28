@@ -1,0 +1,22 @@
+{
+  "name": "@uynis/cli",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Uynis command-line interface for API and automation workflows",
+  "license": "UNLICENSED",
+  "type": "module",
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "uynis": "./bin/uynis.mjs"
+  },
+  "scripts": {
+    "smoke": "node ./bin/uynis.mjs --help"
+  }
+}

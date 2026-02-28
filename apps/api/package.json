@@ -1,0 +1,40 @@
+{
+  "name": "@uynis/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "node ./scripts/preflight.mjs",
+    "dev": "tsx watch src/index.ts",
+    "preworker": "node ./scripts/preflight.mjs",
+    "worker": "tsx src/worker.ts",
+    "prebuild": "node ./scripts/prebuild.mjs",
+    "build": "tsup src/index.ts --format esm --out-dir dist",
+    "prestart": "node ./scripts/preflight.mjs",
+    "start": "node dist/index.js",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.883.0",
+    "@aws-sdk/s3-request-presigner": "^3.883.0",
+    "@fastify/cors": "9.0.1",
+    "@fastify/jwt": "8.0.0",
+    "@fastify/multipart": "8.3.1",
+    "@fastify/swagger": "8.15.0",
+    "@fastify/swagger-ui": "2.1.0",
+    "@opensearch-project/opensearch": "^3.5.1",
+    "@uynis/db": "workspace:*",
+    "adm-zip": "^0.5.16",
+    "fastify": "4.28.1",
+    "ioredis": "^5.8.1",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "8.14.0",
+    "@typescript-eslint/parser": "8.14.0",
+    "@types/node": "20.14.15",
+    "eslint": "8.57.0",
+    "tsup": "8.2.4",
+    "tsx": "4.17.0",
+    "typescript": "5.5.4"
+  }
+}
