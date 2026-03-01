@@ -421,6 +421,9 @@ server.route({
     if (!hasRole && !canReadPublic) {
       const status = auth.userId ? 403 : 401;
       const message = auth.userId ? 'Forbidden.' : 'Authentication required.';
+      if (status === 401) {
+        reply.header('WWW-Authenticate', 'Basic realm="Uynis"');
+      }
       return reply.code(status).send({ message });
     }
 
@@ -786,6 +789,11 @@ async function resolveRequestAuthContext(
       if (!failuresAllowed) {
         return null;
       }
+      // inform the client that basic auth is required; without a
+      // "WWW-Authenticate" header Git will not send credentials at all
+      // even if they are embedded in the URL.  this is the root cause of the
+      // earlier authentication failures during `git clone`.
+      reply.header('WWW-Authenticate', 'Basic realm="Uynis"');
       await reply.code(401).send({ message: 'Invalid authentication token.' });
       return null;
     }
@@ -806,6 +814,9 @@ async function resolveRequestAuthContext(
       return { userId: payload.sub ?? null, pat: null };
     } catch {
       if (authorizationHeader.startsWith('Bearer ')) {
+        // challenge even for bearer tokens so clients realise their token is
+        // invalid and can refresh it.
+        reply.header('WWW-Authenticate', 'Basic realm="Uynis"');
         await reply.code(401).send({ message: 'Invalid authentication token.' });
         return null;
       }

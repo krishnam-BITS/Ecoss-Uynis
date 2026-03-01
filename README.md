@@ -97,12 +97,19 @@ git clone http://localhost:4001/<workspace>/<repo>.git
 ```
 
 - Public repos: clone without token
-- Private repos: token required
-- Push: requires write scope token
+- Private repos: token required (server sends a Basic auth challenge)
+- Push: requires write‑scope token
 
-PAT usage:
-- Username: any value
-- Password: PAT token
+**PAT usage:**
+- Username can be anything (commonly your user slug)
+- Password must be the **full** personal access token including the
+  `uynis_pat_` prefix; the prefix is part of the secret.
+
+When the server responds `401 Unauthorized` it now includes a
+`WWW-Authenticate: Basic` header so `git clone`/`push` will automatically
+retry with credentials if they were embedded in the URL.  If you prefer
+to enter them interactively just omit the token from the URL and type it
+when prompted.
 
 ## PAT and Security
 
