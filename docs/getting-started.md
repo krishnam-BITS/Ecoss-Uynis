@@ -52,7 +52,14 @@ pnpm dev
 ```bash
 git clone http://localhost:4001/<workspace>/<repo>.git
 ```
-For private repos, use PAT as the password.
+The edge now includes a `WWW-Authenticate: Basic` challenge, so Git will
+prompt for credentials if the repo is private.  enter your username and
+use the **full token** (including the `uynis_pat_` prefix) as the
+password.  You may also embed them in the URL, e.g.
+
+```bash
+git clone http://<username>:<full-token>@localhost:4001/<workspace>/<repo>.git
+```
 
 ## Next documentation
 - Architecture: `docs/architecture-overview.md`
