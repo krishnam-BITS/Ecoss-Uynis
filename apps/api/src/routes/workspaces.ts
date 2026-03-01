@@ -5828,8 +5828,9 @@ export async function workspaceRoutes(server: FastifyInstance) {
       return;
     }
 
+    const repo = accessResult.access.repo;
     const jobs = await prisma.repoImportJob.findMany({
-      where: { repoId },
+      where: { repoId: repo.id },
       orderBy: { createdAt: 'desc' },
       take: 20,
     });
@@ -5855,8 +5856,9 @@ export async function workspaceRoutes(server: FastifyInstance) {
         return;
       }
 
+      const repo = accessResult.access.repo;
       const job = await prisma.repoImportJob.findFirst({
-        where: { id: jobId, repoId },
+        where: { id: jobId, repoId: repo.id },
       });
       if (!job) {
         return reply.code(404).send({ message: 'Import job not found.' });
@@ -5885,8 +5887,9 @@ export async function workspaceRoutes(server: FastifyInstance) {
         return;
       }
 
+      const repo = accessResult.access.repo;
       const job = await prisma.repoImportJob.findFirst({
-        where: { id: jobId, repoId },
+        where: { id: jobId, repoId: repo.id },
       });
       if (!job) {
         return reply.code(404).send({ message: 'Import job not found.' });
@@ -6136,7 +6139,7 @@ export async function workspaceRoutes(server: FastifyInstance) {
 
       const job = await prisma.repoImportJob.create({
         data: {
-          repoId,
+          repoId: repo.id,
           createdById: accessResult.userId ?? request.user.sub,
           type: 'ZIP',
           status: 'QUEUED',
@@ -6192,7 +6195,7 @@ export async function workspaceRoutes(server: FastifyInstance) {
 
       const job = await prisma.repoImportJob.create({
         data: {
-          repoId,
+          repoId: repo.id,
           createdById: accessResult.userId ?? request.user.sub,
           type: 'REMOTE',
           status: 'QUEUED',

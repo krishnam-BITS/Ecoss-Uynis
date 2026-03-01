@@ -145,6 +145,82 @@ function printResult(data, jsonMode) {
   console.log(JSON.stringify(data, null, 2));
 }
 
+async function watchImportJob(api, token, workspace, repo, jobId) {
+  const statusChars = { QUEUED: '⏳', RUNNING: '⚙️ ', COMPLETED: '✅', FAILED: '❌' };
+  const pollIntervalMs = 2000;
+  let lastStatus = null;
+  let lastCount = 0;
+
+  console.log('\n📦 Monitoring import job...\n');
+
+  while (true) {
+    try {
+      const response = await requestJson(`${api}/workspaces/${workspace}/repos/${repo}/import/jobs/${jobId}`, {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      
+      // Handle both wrapped response { job: {...} } and unwrapped response
+      const job = response.job || response;
+
+      if (!job || !job.status) {
+        console.error(`\n❌ Invalid job response\n`);
+        break;
+      }
+
+      const statusChar = statusChars[job.status] || '❓';
+      const isBranches = job.importedBranches !== null && job.importedBranches !== undefined;
+      const count = isBranches ? job.importedBranches : job.importedFiles || 0;
+      const unit = isBranches ? 'branches' : 'files';
+
+      // Only update display when status or count changes
+      if (job.status !== lastStatus || count !== lastCount) {
+        if (job.status === 'RUNNING' && count > 0) {
+          // Create a simple progress bar
+          const barLength = 30;
+          const filled = Math.min(count, barLength);
+          const empty = barLength - filled;
+          const bar = '█'.repeat(filled) + '░'.repeat(empty);
+          console.log(`${statusChar} RUNNING [${bar}] ${count} ${unit} imported`);
+        } else if (job.status !== 'RUNNING') {
+          console.log(`${statusChar} ${job.status}`);
+        } else {
+          console.log(`${statusChar} ${job.status}...`);
+        }
+        lastStatus = job.status;
+        lastCount = count;
+      }
+
+      if (job.status === 'COMPLETED') {
+        console.log(`\n✅ Import completed successfully!`);
+        console.log(`   📊 Imported ${job.importedBranches || 0} branches and ${job.importedFiles || 0} files`);
+        if (job.defaultBranch) {
+          console.log(`   🌿 Default branch: ${job.defaultBranch}`);
+        }
+        if (job.commitSha) {
+          console.log(`   🔗 Latest commit: ${job.commitSha.slice(0, 8)}`);
+        }
+        console.log();
+        break;
+      }
+
+      if (job.status === 'FAILED') {
+        console.log(`\n❌ Import failed!`);
+        if (job.error) {
+          console.log(`   Error: ${job.error}`);
+        }
+        console.log(`   Attempts: ${job.attempts}/${job.maxAttempts}`);
+        console.log();
+        break;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+    } catch (error) {
+      console.error(`\n❌ Error polling job: ${error.message}\n`);
+      break;
+    }
+  }
+}
+
 function printHelp() {
   console.log(`
 Uynis CLI
@@ -185,10 +261,10 @@ Repo commands:
   uynis repo list --workspace <id>
   uynis repo import-zip --workspace <id> --repo <id> --file <archive.zip> [--branch <name>] [--message <text>]
   uynis repo import-remote --workspace <id> --repo <id> --url <git-url> [--branch <name>]
-  uynis repo import-zip-async --workspace <id> --repo <id> --file <archive.zip> [--branch <name>] [--message <text>] [--max-attempts <n>]
-  uynis repo import-remote-async --workspace <id> --repo <id> --url <git-url> [--branch <name>] [--max-attempts <n>]
+  uynis repo import-zip-async --workspace <id> --repo <id> --file <archive.zip> [--branch <name>] [--message <text>] [--max-attempts <n>] [--watch]
+  uynis repo import-remote-async --workspace <id> --repo <id> --url <git-url> [--branch <name>] [--max-attempts <n>] [--watch]
   uynis repo import-jobs --workspace <id> --repo <id>
-  uynis repo import-job --workspace <id> --repo <id> --job <jobId>
+  uynis repo import-job --workspace <id> --repo <id> --job <jobId> [--watch]
   uynis repo import-cancel --workspace <id> --repo <id> --job <jobId>
 
 Token commands:
@@ -598,6 +674,19 @@ async function run() {
       const filePath = requireFlag(flags, 'file');
       const branch = getFlag(flags, 'branch');
       const message = getFlag(flags, 'message');
+
+      // if the archive is large, warn user to use async import
+      try {
+        const fs = await import('fs');
+        const stats = await fs.promises.stat(filePath);
+        if (stats.size > 50 * 1024 * 1024) {
+          console.warn(
+            `⚠️  Archive is ${(stats.size / (1024 * 1024)).toFixed(1)} MB; ` +
+              'consider `import-zip-async` for large files to avoid timeouts.',
+          );
+        }
+      } catch {}
+
       const buffer = await readFile(filePath);
       const form = new FormData();
       form.set('archive', new Blob([buffer]), path.basename(filePath));
@@ -623,15 +712,28 @@ async function run() {
       const repo = requireFlag(flags, 'repo');
       const url = requireFlag(flags, 'url');
       const branch = getFlag(flags, 'branch');
-      const data = await requestJson(`${api}/workspaces/${workspace}/repos/${repo}/import/remote`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ url, branch: branch || undefined }),
-      });
-      printResult(data, jsonMode);
+
+      // warn the user that synchronous import may fail for big repositories
+      console.warn(
+        '⚠️  Performing a synchronous import; this may time out or error if the repository is large.\n' +
+          '    For big repos use `import-remote-async` (with --watch to track progress).',
+      );
+
+      try {
+        const data = await requestJson(`${api}/workspaces/${workspace}/repos/${repo}/import/remote`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ url, branch: branch || undefined }),
+        });
+        printResult(data, jsonMode);
+      } catch (err) {
+        console.error('Import failed:', err.message);
+        console.error('If the repository is large, retry with `import-remote-async --watch`.');
+        process.exit(1);
+      }
       return;
     }
 
@@ -642,6 +744,7 @@ async function run() {
       const branch = getFlag(flags, 'branch');
       const message = getFlag(flags, 'message');
       const maxAttempts = getFlag(flags, 'max-attempts');
+      const watch = hasFlag(flags, 'watch');
       const buffer = await readFile(filePath);
       const form = new FormData();
       form.set('archive', new Blob([buffer]), path.basename(filePath));
@@ -662,6 +765,9 @@ async function run() {
         body: form,
       });
       printResult(data, jsonMode);
+      if (watch && !jsonMode) {
+        await watchImportJob(api, token, workspace, repo, data.job.id);
+      }
       return;
     }
 
@@ -671,6 +777,7 @@ async function run() {
       const url = requireFlag(flags, 'url');
       const branch = getFlag(flags, 'branch');
       const maxAttempts = getFlag(flags, 'max-attempts');
+      const watch = hasFlag(flags, 'watch');
       const payload = { url };
       if (branch) {
         payload.branch = branch;
@@ -687,6 +794,9 @@ async function run() {
         body: JSON.stringify(payload),
       });
       printResult(data, jsonMode);
+      if (watch && !jsonMode) {
+        await watchImportJob(api, token, workspace, repo, data.job.id);
+      }
       return;
     }
 
@@ -704,10 +814,14 @@ async function run() {
       const workspace = requireFlag(flags, 'workspace');
       const repo = requireFlag(flags, 'repo');
       const job = requireFlag(flags, 'job');
+      const watch = hasFlag(flags, 'watch');
       const data = await requestJson(`${api}/workspaces/${workspace}/repos/${repo}/import/jobs/${job}`, {
         headers: { authorization: `Bearer ${token}` },
       });
       printResult(data, jsonMode);
+      if (watch && !jsonMode) {
+        await watchImportJob(api, token, workspace, repo, job);
+      }
       return;
     }
 

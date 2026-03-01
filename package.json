@@ -16,5 +16,9 @@
     "prettier": "3.2.5",
     "turbo": "2.0.6",
     "typescript": "5.5.4"
+  },
+  "dependencies": {
+    "prisma": "^7.4.2",
+    "studio": "^0.13.5"
   }
 }
