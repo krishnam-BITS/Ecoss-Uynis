@@ -181,7 +181,7 @@ Workspace commands:
   uynis workspace create --name <name> [--slug <slug>]
 
 Repo commands:
-  uynis repo create --workspace <id> --name <repo> [--visibility PUBLIC|PRIVATE|INTERNAL]
+  uynis repo create --workspace <id> --name <repo> [--visibility PUBLIC|PRIVATE|INTERNAL] [--no-init]
   uynis repo list --workspace <id>
   uynis repo import-zip --workspace <id> --repo <id> --file <archive.zip> [--branch <name>] [--message <text>]
   uynis repo import-remote --workspace <id> --repo <id> --url <git-url> [--branch <name>]
@@ -567,6 +567,9 @@ async function run() {
       const payload = { name };
       if (visibility) {
         payload.visibility = visibility;
+      }
+      if (hasFlag(flags, 'no-init')) {
+        payload.initialize = false;
       }
       const data = await requestJson(`${api}/workspaces/${workspace}/repos`, {
         method: 'POST',

@@ -11,7 +11,10 @@ export type CreateWorkspaceInput = {
 
 export type CreateRepoInput = {
   name: string;
+  slug?: string;
+  description?: string;
   visibility?: 'PUBLIC' | 'PRIVATE' | 'INTERNAL';
+  initialize?: boolean;
 };
 
 export type CommitChange = {
@@ -455,4 +458,3 @@ export class UynisClient {
     });
   }
 }
-

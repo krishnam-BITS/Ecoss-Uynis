@@ -95,6 +95,7 @@ const createRepoSchema = z.object({
   slug: z.string().min(2).max(63).optional(),
   description: z.string().max(280).optional(),
   visibility: z.enum(['PUBLIC', 'PRIVATE', 'INTERNAL']).optional(),
+  initialize: z.boolean().optional(),
 });
 
 const forkRepoSchema = z.object({
@@ -6499,6 +6500,7 @@ export async function workspaceRoutes(server: FastifyInstance) {
     }
 
     try {
+      const shouldInitializeRepo = body.initialize !== false;
       const repo = await prisma.repo.create({
         data: {
           workspaceId,
@@ -6531,31 +6533,32 @@ export async function workspaceRoutes(server: FastifyInstance) {
       const defaultBranch = sanitizeBranchRef(repo.defaultBranch);
       try {
         await initBareRepo(repoRoot, workspace.slug, repo.slug);
-
-        const actor = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { name: true, username: true, email: true },
-        });
-        const authorName = actor?.name || actor?.username || 'Uynis';
-        const authorEmail =
-          actor?.email ||
-          (actor?.username ? `${actor.username}@users.uynis.local` : 'noreply@uynis.local');
-
-        await createCommitWithChanges({
-          repoDir,
-          branch: defaultBranch,
-          message: 'chore: initialize repository',
-          authorName,
-          authorEmail,
-          changes: [
-            {
-              path: 'README.md',
-              content: `# ${repo.name}\n\nRepository initialized in Uynis.\n`,
-            },
-          ],
-        });
-
         await setRepoHead(repoDir, defaultBranch);
+
+        if (shouldInitializeRepo) {
+          const actor = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { name: true, username: true, email: true },
+          });
+          const authorName = actor?.name || actor?.username || 'Uynis';
+          const authorEmail =
+            actor?.email ||
+            (actor?.username ? `${actor.username}@users.uynis.local` : 'noreply@uynis.local');
+
+          await createCommitWithChanges({
+            repoDir,
+            branch: defaultBranch,
+            message: 'chore: initialize repository',
+            authorName,
+            authorEmail,
+            changes: [
+              {
+                path: 'README.md',
+                content: `# ${repo.name}\n\nRepository initialized in Uynis.\n`,
+              },
+            ],
+          });
+        }
       } catch (error) {
         await prisma.repoMember.deleteMany({
           where: { repoId: repo.id },
@@ -6579,4 +6582,3 @@ export async function workspaceRoutes(server: FastifyInstance) {
     }
   });
 }
-

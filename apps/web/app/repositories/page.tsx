@@ -338,6 +338,7 @@ export default function RepositoriesPage() {
             name: normalizedImportName,
             slug: normalizedImportSlug || undefined,
             visibility: importVisibility,
+            initialize: false,
           }),
         },
       );
@@ -841,5 +842,4 @@ export default function RepositoriesPage() {
     </AppShell>
   );
 }
-
 
